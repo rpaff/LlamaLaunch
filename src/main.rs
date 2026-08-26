@@ -220,9 +220,14 @@ impl LlamaServerManagerApp {
         self.model_logs.clear();
     }
 
-    fn update_logs(&mut self) {
+    fn update_logs(&mut self, ctx: &egui::Context) {
         if let Some(ref mut log_stream) = self.log_stream {
             self.model_logs.extend(log_stream.poll(100));
+        }
+        // Always repaint while the server is running so the logs panel
+        // updates continuously even without mouse interaction.
+        if self.running_model.is_some() {
+            ctx.request_repaint();
         }
         if let Some(mut running) = self.running_model.take() {
             match running.child.try_wait() {
@@ -636,7 +641,7 @@ impl eframe::App for LlamaServerManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Sync in-memory config from settings
         self.config = self.settings.to_config();
-        self.update_logs();
+        self.update_logs(ctx);
         if self.stop_requested {
             self.stop_current_model();
         }
