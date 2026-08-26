@@ -220,9 +220,23 @@ impl LlamaServerManagerApp {
         self.model_logs.clear();
     }
 
+    /// Maximum number of log lines to keep in memory. Older lines are discarded
+    /// to bound memory usage during long-running sessions (hours/days).
+    const MAX_LOG_LINES: usize = 2000;
+
     fn update_logs(&mut self, ctx: &egui::Context) {
         if let Some(ref mut log_stream) = self.log_stream {
-            self.model_logs.extend(log_stream.poll(100));
+            let new_lines = log_stream.poll(100);
+            if !new_lines.is_empty() {
+                // Trim old lines so the Vec never grows unbounded.
+                // Keeps at most MAX_LOG_LINES total; drops oldest first.
+                let target_len = (self.model_logs.len() + new_lines.len()).min(Self::MAX_LOG_LINES);
+                self.model_logs.reserve(new_lines.len());
+                while self.model_logs.len() > target_len {
+                    self.model_logs.remove(0);
+                }
+                self.model_logs.extend(new_lines);
+            }
         }
         // Always repaint while the server is running so the logs panel
         // updates continuously even without mouse interaction.

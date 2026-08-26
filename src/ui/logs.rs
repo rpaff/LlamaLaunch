@@ -14,8 +14,14 @@ pub struct ModelLogStream {
 
 impl ModelLogStream {
     /// Start threads to read stdout and stderr from the child process in parallel.
+    /// Uses a bounded channel so backpressure prevents unbounded memory growth
+    /// during long-running servers with heavy output.
     pub fn new(child: &mut Child) -> Self {
-        let (sender, receiver) = mpsc::channel();
+        // Buffer of 1024 lines — plenty to absorb burst spew without dropping,
+        // but hard cap so the background threads don't fill RAM when the UI
+        // hasn't polled in a while (e.g. user switched tabs).
+        const CHANNEL_CAPACITY: usize = 1024;
+        let (sender, receiver) = mpsc::sync_channel(CHANNEL_CAPACITY);
 
         let stdout = child.stdout.take().expect("stdout should be piped");
         let stderr = child.stderr.take().expect("stderr should be piped");
@@ -67,8 +73,8 @@ impl ModelLogStream {
 
 /// Read bytes from a stream, splitting on any combination of \r / \n,
 /// and send each non-empty line through the channel immediately.
-fn read_lines<T: std::io::Read>(reader: T, sender: mpsc::Sender<String>) {
-    let buf_reader = BufReader::with_capacity(128 * 1024, reader); // 128 KB buffer
+fn read_lines<T: std::io::Read>(reader: T, sender: mpsc::SyncSender<String>) {
+    let buf_reader = BufReader::with_capacity(128 * 1024, reader);
 
     for result in buf_reader.split(b'\n') {
         match result {
@@ -80,18 +86,15 @@ fn read_lines<T: std::io::Read>(reader: T, sender: mpsc::Sender<String>) {
                         let chunk = &remaining[..pos];
                         if !is_blank(chunk) {
                             let text = String::from_utf8_lossy(chunk).into_owned();
-                            if sender.send(text).is_err() {
-                                return;
-                            }
+                            // On full channel, drop to avoid blocking the reader.
+                            let _ = sender.try_send(text);
                         }
                         remaining = &remaining[pos + 1..]; // skip \r
                     } else {
                         // No more \r in this segment — emit the rest.
                         if !is_blank(remaining) {
                             let text = String::from_utf8_lossy(remaining).into_owned();
-                            if sender.send(text).is_err() {
-                                return;
-                            }
+                            let _ = sender.try_send(text);
                         }
                         break;
                     }
