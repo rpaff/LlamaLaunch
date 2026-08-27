@@ -112,7 +112,7 @@ struct LlamaServerManagerApp {
     active_model_id: Option<String>,
     running_model: Option<models::RunningModel>,
     log_stream: Option<ui::logs::ModelLogStream>,
-    model_logs: Vec<String>,
+    model_logs: Vec<models::LogEntry>,
     auto_scroll: bool,
     open_settings: bool,
     stop_requested: bool,
@@ -407,16 +407,20 @@ impl LlamaServerManagerApp {
                             }
                         });
                         ui.separator();
-                        let lines: Vec<String> =
-                            self.model_logs.iter().take(200).cloned().collect();
-                        if lines.is_empty() {
+                        let display_lines: Vec<String> = self
+                            .model_logs
+                            .iter()
+                            .take(200)
+                            .map(|e| e.display_line())
+                            .collect();
+                        if display_lines.is_empty() {
                             ui.monospace("Waiting for model output...\n");
                         } else {
                             egui::ScrollArea::vertical()
                                 .auto_shrink(false)
                                 .stick_to_bottom(self.auto_scroll)
                                 .show(ui, |ui| {
-                                    ui.monospace(lines.join("\n"));
+                                    ui.monospace(display_lines.join("\n"));
                                 });
                         }
                     });

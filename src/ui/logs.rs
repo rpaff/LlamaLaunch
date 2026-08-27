@@ -3,6 +3,8 @@ use std::process::Child;
 use std::sync::mpsc;
 use std::thread;
 
+use crate::models::LogEntry;
+
 /// Stream for reading stdout/stderr from a running child process.
 /// Reads with line buffering and splits on \n, \r\n, or bare \r — this
 /// guarantees that every newline-terminated message from llama.cpp arrives
@@ -51,11 +53,13 @@ impl ModelLogStream {
     }
 
     /// Poll up to `max_lines` new log entries from the channel.
-    pub fn poll(&mut self, max_lines: usize) -> Vec<String> {
+    pub fn poll(&mut self, max_lines: usize) -> Vec<LogEntry> {
         let mut logs = Vec::new();
         while logs.len() < max_lines {
             match self.receiver.try_recv() {
-                Ok(line) => logs.push(line),
+                Ok(line) => {
+                    logs.push(LogEntry::new(line));
+                }
                 Err(mpsc::TryRecvError::Empty) => break,
                 Err(mpsc::TryRecvError::Disconnected) => break,
             }
