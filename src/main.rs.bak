@@ -516,8 +516,6 @@ fn ui_settings_body(
 
     ui.add_space(10.0);
     if ui.button("+ Add Model").clicked() {
-        // Close edit form if open — only one form at a time
-        s.edit_model_form = None;
         s.add_model_form = Some(AddModelForm::new());
     }
 
@@ -572,9 +570,6 @@ fn ui_settings_body(
                             description: form.description.trim().to_string(),
                             args: form.args.trim().to_string(),
                         });
-                        // Persist immediately after adding.
-                        config.models = s.models.clone();
-                        let _ = config.save();
                     }
                 } else if form.name.is_empty() || form.args.trim().is_empty() {
                     eprintln!("Name and Args cannot be empty.");
@@ -593,8 +588,6 @@ fn ui_settings_body(
 
     let mut cancel_edit = false;
     if let Some((idx, mut edit_form)) = s.edit_model_form.take() {
-        // Close add form if open — only one form at a time
-        s.add_model_form = None;
         ui.add_space(10.0);
         ui.separator();
         ui.add_space(10.0);
@@ -655,9 +648,6 @@ fn ui_settings_body(
                 } else {
                     eprintln!("Name is required and Args cannot be empty.");
                 }
-                // Persist immediately after editing.
-                config.models = s.models.clone();
-                let _ = config.save();
             }
             if ui.button("Cancel").clicked() {
                 cancel_edit = true;
@@ -665,30 +655,14 @@ fn ui_settings_body(
         });
         if !cancel_edit {
             s.edit_model_form = Some((idx, edit_form));
-        } else {
-            // Cancelled — close the form.
-            s.edit_model_form = None;
         }
     }
 
-    // Final Save button to persist all settings (path + models).
-    ui.add_space(20.0);
-    ui.separator();
-    ui.add_space(10.0);
-    if ui.button("Save").clicked() {
-        config.llama_server_path = s.llama_server_path.clone();
-        config.models = s.models.clone();
-        if let Err(e) = config.save() {
-            eprintln!("Error saving config: {}", e);
-        }
-    }
+
 }
 
 impl eframe::App for LlamaServerManagerApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Update logs first so they're fresh when draw_home reads them.
-        self.update_logs(ctx);
-
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.config = self.settings.to_config();
 
         let close_requested = ctx.input(|i| i.viewport().close_requested());
