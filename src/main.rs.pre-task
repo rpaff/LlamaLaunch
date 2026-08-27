@@ -410,6 +410,7 @@ impl LlamaServerManagerApp {
                         let display_lines: Vec<String> = self
                             .model_logs
                             .iter()
+                            .take(200)
                             .map(|e| e.display_line())
                             .collect();
                         if display_lines.is_empty() {
