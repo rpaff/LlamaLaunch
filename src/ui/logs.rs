@@ -17,10 +17,10 @@ impl ModelLogStream {
     /// Uses a bounded channel so backpressure prevents unbounded memory growth
     /// during long-running servers with heavy output.
     pub fn new(child: &mut Child) -> Self {
-        // Buffer of 1024 lines — plenty to absorb burst spew without dropping,
-        // but hard cap so the background threads don't fill RAM when the UI
-        // hasn't polled in a while (e.g. user switched tabs).
-        const CHANNEL_CAPACITY: usize = 1024;
+        // Buffer of 8192 lines — prevents log drops during idle periods between
+        // model generations when the llama.cpp server writes heartbeat/metrics to
+        // stdout/stderr but the UI hasn't polled for a while.
+        const CHANNEL_CAPACITY: usize = 8192;
         let (sender, receiver) = mpsc::sync_channel(CHANNEL_CAPACITY);
 
         let stdout = child.stdout.take().expect("stdout should be piped");
