@@ -1,22 +1,3 @@
-<p align="center">
-  <picture>
-    <source srcset="https://raw.githubusercontent.com/rpaff/LlamaLaunch/main/assets/logo-dark.png" media="(prefers-color-scheme: dark)">
-    <img src="https://raw.githubusercontent.com/rpaff/LlamaLaunch/main/assets/logo-light.png" alt="LlamaLaunch Logo" width="280" style="background:#1a1a1a; padding:20px; border-radius:12px;">
-  </picture>
-</p>
-
-<p align="center">
-  <strong>Fast, beautiful launcher for llama.cpp — with zero terminal hassle.</strong>
-</p>
-
-<p align="center">
-<a href="https://github.com/rpaff/LlamaLaunch/releases/latest" target="_blank"><img src="https://img.shields.io/github/v/release/rpaff/LlamaLaunch?style=for-the-badge&logo=github&color=4caf50" alt="Latest Release"></a>
-<a href="https://github.com/rpaff/LlamaLaunch/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/github/license/rpaff/LlamaLaunch?style=for-the-badge&logo=github&color=9e9e9e" alt="License"></a>
-<a href="https://www.rust-lang.org/" target="_blank"><img src="https://img.shields.io/badge/rust-%23000?style=for-the-badge&logo=rust&logoColor=#E84E2B" alt="Rust"></a>
-</p>
-
----
-
 # 🚀 LlamaLaunch
 
 **[English](#-english)** | [Русский](#-русский)
@@ -26,6 +7,10 @@
 ## 🇬🇧 English
 
 A sleek, cross-platform graphical launcher built in Rust for **[llama.cpp](https://github.com/ggerganov/llama.cpp)**. Say goodbye to typing terminal commands — manage and launch your local LLM models from a clean, intuitive interface.
+
+### Why LlamaLaunch?
+
+LlamaLaunch was built with one principle: **nothing between you and your model**. No web panels, no cloud dependencies, no telemetry or tracking of any kind. It is just a small, native Rust binary that does one job extremely well — launching llama.cpp servers the way you want them launched. The interface strips away everything unnecessary so you see only your models and the Start/Stop controls. Yet this minimalism never means limited functionality: every model configuration accepts fully custom launch arguments, so you can fine-tune `--ctx-size`, `--gpu-layers`, `--tensor-split`, temperature, or any other parameter that llama.cpp supports. One config per model, all stored in a single `config.json` next to the executable. Portable on a USB stick, silent background launches with no flashing console windows, and a live log panel that streams output in real time. It is minimal where it matters, powerful where you need it.
 
 ### ✨ Features
 
@@ -39,9 +24,9 @@ A sleek, cross-platform graphical launcher built in Rust for **[llama.cpp](https
 
 ### 📥 Get Started
 
-The first release is already out! Grab it here:
+The latest release is already out! Grab it here:
 
-👉 **[Download v0.1.0 Release](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.0)**
+👉 **[Download v0.1.6 Release](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.6)**
 
 **Quick start:**
 1. Download the latest release from the link above.
@@ -53,7 +38,7 @@ The first release is already out! Grab it here:
 
 ### 🛠️ Tech Stack
 
-| Component | Technology |
+|| Component | Technology |
 |-----------|------------|
 | Language | [Rust](https://www.rust-lang.org/) (Edition 2021) |
 | GUI Framework | [`eframe` / `egui`](https://github.com/emilk/egui) |
@@ -71,6 +56,10 @@ Made with ❤️ by [rpaff](https://github.com/rpaff).
 
 Элегантный кроссплатформенный графический лаунчер, написанный на Rust для **[llama.cpp](https://github.com/ggerganov/llama.cpp)**. Забудьте про командную строку — управляйте и запускайте ваши локальные LLM-модели из чистого и интуитивного интерфейса.
 
+### Почему LlamaLaunch?
+
+LlamaLaunch создан по одному принципу: **ничего лишнего между вами и моделью**. Никаких веб-панелей, облачных зависимостей, телеметрии или слежки. Это компактный нативный бинарник на Rust, который делает одну вещь — но делает отлично: запускает серверы llama.cpp именно так, как вам нужно. Интерфейс отбрасывает всё ненужное, чтобы вы видели только свои модели и кнопки Start/Stop. Но этот минимализм никогда не означает ограничений: каждая конфигурация модели принимает полностью произвольные аргументы запуска — настраивайте `--ctx-size`, `--gpu-layers`, `--tensor-split`, температуру или любой другой параметр, который поддерживает llama.cpp. Один конфиг на модель, всё хранится в одном `config.json` рядом с исполняемым файлом. Лаунчер помещается на флешку, запускает сервера без консольных окон и всплывающих терминалов, а панель логов транслирует вывод в реальном времени. Минимализм там, где это важно — мощь там, где она нужна.
+
 ### ✨ Возможности
 
 - **Запуск моделей в один клик** — Запускайте любую настроенную модель мгновенно, без набора длинных аргументов командной строки.
@@ -83,9 +72,9 @@ Made with ❤️ by [rpaff](https://github.com/rpaff).
 
 ### 📥 Начало работы
 
-Первый релиз уже доступен! Скачайте здесь:
+Последний релиз уже доступен! Скачайте здесь:
 
-👉 **[Скачать релиз v0.1.0](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.0)**
+👉 **[Скачать релиз v0.1.6](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.6)**
 
 **Быстрый старт:**
 1. Скачайте последний релиз по ссылке выше.
@@ -97,7 +86,7 @@ Made with ❤️ by [rpaff](https://github.com/rpaff).
 
 ### 🛠️ Технологии
 
-| Компонент | Технология |
+|| Компонент | Технология |
 |-----------|------------|
 | Язык | [Rust](https://www.rust-lang.org/) (Edition 2021) |
 | GUI Фреймворк | [`eframe` / `egui`](https://github.com/emilk/egui) |
