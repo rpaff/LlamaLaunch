@@ -305,6 +305,8 @@ impl LlamaServerManagerApp {
                             config::Theme::Light => config::Theme::Dark,
                             config::Theme::Dark => config::Theme::Light,
                         };
+                        self.config.theme = self.settings.theme;
+                        let _ = self.config.save();
                     }
                     ui.add_space(8.0);
                     if ui.button("Settings").clicked() {
