@@ -120,6 +120,9 @@ struct LlamaServerManagerApp {
     open_settings: bool,
     stop_requested: bool,
     exit_dialog_shown: bool,
+    prev_theme: Option<config::Theme>,
+    error_message: Option<String>,
+    error_shown: bool,
 }
 
 impl LlamaServerManagerApp {
@@ -139,6 +142,9 @@ impl LlamaServerManagerApp {
             open_settings: false,
             stop_requested: false,
             exit_dialog_shown: false,
+            prev_theme: None,
+            error_message: None,
+            error_shown: false,
         }
     }
 
@@ -191,7 +197,8 @@ impl LlamaServerManagerApp {
 
     fn start_model(&mut self, model_id: &str) {
         if self.running_model.is_some() {
-            eprintln!("Stop the current model first.");
+            self.error_message = Some("Stop the current model first.".to_string());
+            self.error_shown = true;
             return;
         }
         let model_config = self
@@ -201,23 +208,27 @@ impl LlamaServerManagerApp {
             .find(|m| m.id == model_id)
             .cloned();
         let Some(model_config) = model_config else {
-            eprintln!("Model {} not found.", model_id);
+            self.error_message = Some(format!("Model {} not found.", model_id));
+            self.error_shown = true;
             return;
         };
         let server_path = match self.config.resolved_server_path() {
             Ok(p) => p,
             Err(e) => {
-                eprintln!("Error resolving server path: {}", e);
+                self.error_message = Some(format!("Error resolving server path: {}", e));
+                self.error_shown = true;
                 return;
             }
         };
         if !server_path.exists() {
-            eprintln!("llama-server.exe not found: {}", server_path.display());
+            self.error_message = Some(format!("llama-server.exe not found: {}", server_path.display()));
+            self.error_shown = true;
             return;
         }
         let args = parse_args(&model_config.args);
         if args.is_empty() {
-            eprintln!("Model '{}' has no args.", model_config.name);
+            self.error_message = Some(format!("Model '{}' has no args.", model_config.name));
+            self.error_shown = true;
             return;
         }
         let server_dir = server_path.parent().map(std::path::Path::to_path_buf);
@@ -231,7 +242,8 @@ impl LlamaServerManagerApp {
         {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("Failed to start llama-server: {}", e);
+                self.error_message = Some(format!("Failed to start llama-server: {}", e));
+                self.error_shown = true;
                 return;
             }
         };
@@ -288,7 +300,6 @@ impl LlamaServerManagerApp {
 
     fn draw_home(&mut self, ctx: &egui::Context) {
         let theme = self.settings.theme;
-        Self::apply_theme(ctx, theme);
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -385,6 +396,27 @@ impl LlamaServerManagerApp {
             });
         });
 
+        if self.error_shown {
+            egui::Window::new("Error")
+                .collapsible(false)
+                .resizable(false)
+                .default_size([400.0, 120.0])
+                .current_pos(egui::Pos2::new(
+                    ctx.screen_rect().center().x - 200.0,
+                    ctx.screen_rect().center().y - 60.0,
+                ))
+                .show(ctx, |ui| {
+                    if let Some(ref msg) = self.error_message {
+                        ui.label(msg);
+                    }
+                    ui.add_space(10.0);
+                    if ui.button("OK").clicked() {
+                        self.error_shown = false;
+                        self.error_message = None;
+                    }
+                });
+        }
+
         if self.running_model.is_some() {
             egui::TopBottomPanel::bottom("logs_panel")
                 .resizable(true)
@@ -433,13 +465,13 @@ impl LlamaServerManagerApp {
         }
     }
 
-    fn apply_theme(ctx: &egui::Context, theme: config::Theme) {
-        let visuals = match theme {
-            config::Theme::Light => egui::Visuals::light(),
-            config::Theme::Dark => egui::Visuals::dark(),
-        };
-        ctx.set_visuals(visuals);
-    }
+fn apply_theme(ctx: &egui::Context, theme: config::Theme) {
+    let visuals = match theme {
+        config::Theme::Light => egui::Visuals::light(),
+        config::Theme::Dark => egui::Visuals::dark(),
+    };
+    ctx.set_visuals(visuals);
+}
 
     fn style_panel(ui: &mut egui::Ui, theme: config::Theme) {
         match theme {
@@ -454,6 +486,8 @@ impl LlamaServerManagerApp {
                 ui.visuals_mut().panel_fill = egui::Color32::from_rgb(30, 30, 30);
                 ui.visuals_mut().widgets.noninteractive.bg_stroke =
                     egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(60, 60, 60));
+                ui.visuals_mut().widgets.inactive.fg_stroke =
+                    egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(255, 255, 255));
             }
         }
     }
@@ -802,6 +836,11 @@ impl eframe::App for LlamaServerManagerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Update logs first so they're fresh when draw_home reads them.
         self.update_logs(ctx);
+
+        if self.prev_theme != Some(self.settings.theme) {
+            Self::apply_theme(ctx, self.settings.theme);
+            self.prev_theme = Some(self.settings.theme);
+        }
 
         self.config = self.settings.to_config();
 

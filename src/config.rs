@@ -25,6 +25,7 @@ pub struct Config {
     /// Список моделей.
     pub models: Vec<crate::models::ModelConfig>,
     /// Тема приложения.
+    #[serde(default)]
     pub theme: Theme,
 }
 
