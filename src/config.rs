@@ -3,6 +3,20 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Тема приложения.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    Light,
+    Dark,
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Theme::Light
+    }
+}
+
 /// Структура всей конфигурации.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -10,6 +24,8 @@ pub struct Config {
     pub llama_server_path: String,
     /// Список моделей.
     pub models: Vec<crate::models::ModelConfig>,
+    /// Тема приложения.
+    pub theme: Theme,
 }
 
 impl Default for Config {
@@ -17,6 +33,7 @@ impl Default for Config {
         Config {
             llama_server_path: "./llama-server.exe".to_string(),
             models: Vec::new(),
+            theme: Theme::default(),
         }
     }
 }
