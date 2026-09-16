@@ -26,7 +26,7 @@ LlamaLaunch was built with one principle: **nothing between you and your model**
 
 The latest release is already out! Grab it here:
 
-👉 **[Download v0.1.6 Release](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.6)**
+👉 **[Download v0.1.12 Release](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.12)**
 
 **Quick start:**
 1. Download the latest release from the link above.
@@ -74,7 +74,7 @@ LlamaLaunch создан по одному принципу: **ничего ли
 
 Последний релиз уже доступен! Скачайте здесь:
 
-👉 **[Скачать релиз v0.1.6](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.6)**
+👉 **[Скачать релиз v0.1.12](https://github.com/rpaff/LlamaLaunch/releases/tag/v0.1.12)**
 
 **Быстрый старт:**
 1. Скачайте последний релиз по ссылке выше.
