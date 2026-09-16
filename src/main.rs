@@ -815,6 +815,7 @@ fn ui_settings_body(
     if ui.button("Save").clicked() {
         config.llama_server_path = s.llama_server_path.clone();
         config.models = s.models.clone();
+        config.theme = s.theme;
         if let Err(e) = config.save() {
             eprintln!("Error saving config: {}", e);
         }
