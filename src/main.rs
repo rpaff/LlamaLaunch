@@ -555,32 +555,6 @@ impl LlamaServerManagerApp {
                     egui::ScrollArea::vertical()
                         .vscroll(true)
                         .show(ui, |ui| {
-                            // Theme selector at the top of settings
-                            ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("Theme").strong());
-                                ui.separator();
-                                egui::ComboBox::from_id_salt("theme_selector")
-                                    .selected_text(match self.settings.theme {
-                                        config::Theme::Light => "☀ Light",
-                                        config::Theme::Dark => "☾ Dark",
-                                    })
-                                    .show_ui(ui, |ui| {
-                                        ui.selectable_value(
-                                            &mut self.settings.theme,
-                                            config::Theme::Light,
-                                            "☀ Light",
-                                        );
-                                        ui.selectable_value(
-                                            &mut self.settings.theme,
-                                            config::Theme::Dark,
-                                            "☾ Dark",
-                                        );
-                                    });
-                            });
-                            ui.add_space(15.0);
-                            ui.separator();
-                            ui.add_space(10.0);
-
                             ui_settings_body(ui, &mut self.settings, &mut self.config);
                         });
                 });

@@ -86,6 +86,7 @@ struct SettingsState {
     models: Vec<models::ModelConfig>,
     add_model_form: Option<AddModelForm>,
     edit_model_form: Option<(usize, EditModelForm)>,
+    theme: config::Theme,
 }
 
 impl SettingsState {
@@ -95,6 +96,7 @@ impl SettingsState {
             models: config.models.clone(),
             add_model_form: None,
             edit_model_form: None,
+            theme: config.theme,
         }
     }
 
@@ -102,6 +104,7 @@ impl SettingsState {
         config::Config {
             llama_server_path: self.llama_server_path.clone(),
             models: self.models.clone(),
+            theme: self.theme,
         }
     }
 }
@@ -284,11 +287,28 @@ impl LlamaServerManagerApp {
     }
 
     fn draw_home(&mut self, ctx: &egui::Context) {
+        let theme = self.settings.theme;
+        Self::apply_theme(ctx, theme);
+
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("Llama Server Manager");
                 ui.separator();
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    // Theme toggle button
+                    let icon = match theme {
+                        config::Theme::Light => "☀",
+                        config::Theme::Dark => "☾",
+                    };
+                    if ui.button(icon).on_hover_text("Toggle theme").clicked() {
+                        self.settings.theme = match theme {
+                            config::Theme::Light => config::Theme::Dark,
+                            config::Theme::Dark => config::Theme::Light,
+                        };
+                        self.config.theme = self.settings.theme;
+                        let _ = self.config.save();
+                    }
+                    ui.add_space(8.0);
                     if ui.button("Settings").clicked() {
                         self.open_settings = true;
                     }
@@ -298,12 +318,7 @@ impl LlamaServerManagerApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.scope(|ui| {
-                ui.visuals_mut().override_text_color = Some(egui::Color32::from_black_alpha(255));
-                ui.visuals_mut().panel_fill = egui::Color32::from_rgb(245, 245, 245);
-                ui.visuals_mut().widgets.noninteractive.bg_stroke =
-                    egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(204, 204, 204));
-                ui.visuals_mut().widgets.inactive.fg_stroke =
-                    egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(255, 255, 255));
+                Self::style_panel(ui, theme);
 
                 let avail = ui.available_width();
                 let card_w = (avail - 60.0) / 3.0;
@@ -323,7 +338,7 @@ impl LlamaServerManagerApp {
                         let color = if *is_active {
                             egui::Color32::from_rgb(0, 170, 85)
                         } else {
-                            egui::Color32::from_rgb(50, 50, 50)
+                            Self::card_bg_color(theme)
                         };
                         ui.add_space(20.0);
                         let frame = egui::Frame::none()
@@ -333,7 +348,7 @@ impl LlamaServerManagerApp {
                                 if *is_active {
                                     egui::Color32::from_rgb(0, 200, 100)
                                 } else {
-                                    egui::Color32::from_rgb(204, 204, 204)
+                                    Self::card_border_color(theme)
                                 },
                             ))
                             .inner_margin(egui::Margin::symmetric(15.0, 15.0));
@@ -343,21 +358,13 @@ impl LlamaServerManagerApp {
                                 egui::RichText::new(name)
                                     .size(16.0)
                                     .strong()
-                                    .color(if *is_active {
-                                        egui::Color32::WHITE
-                                    } else {
-                                        egui::Color32::from_rgb(255, 255, 255)
-                                    }),
+                                    .color(Self::card_title_color(theme, *is_active)),
                             );
                             if !desc.is_empty() {
                                 ui.label(
                                     egui::RichText::new(desc)
                                         .size(12.0)
-                                        .color(if *is_active {
-                                            egui::Color32::from_rgb(220, 220, 220)
-                                        } else {
-                                            egui::Color32::from_rgb(200, 200, 200)
-                                        }),
+                                        .color(Self::card_desc_color(theme, *is_active)),
                                 );
                             }
                             ui.separator();
@@ -383,17 +390,16 @@ impl LlamaServerManagerApp {
                 .resizable(true)
                 .show(ctx, |ui| {
                     ui.scope(|ui| {
-                        ui.visuals_mut().override_text_color =
-                            Some(egui::Color32::from_black_alpha(255));
-                        ui.visuals_mut().panel_fill = egui::Color32::from_rgb(30, 30, 30);
+                        Self::style_logs_panel(ui, theme);
                         ui.horizontal(|ui| {
                             if self.running_model.is_some() {
                                 ui.label(
-                                    egui::RichText::new("Logs — loading...").strong()
-                                        .color(egui::Color32::YELLOW),
+                                    egui::RichText::new("Logs — loading...")
+                                        .strong()
+                                        .color(Self::logs_accent_color(theme)),
                                 );
                             } else {
-                                ui.label(egui::RichText::new("Logs").strong());
+                                ui.label(egui::RichText::new("Logs").strong().color(Self::text_color(theme)));
                             }
                             ui.separator();
                             if ui.button("Clear").clicked() {
@@ -427,6 +433,110 @@ impl LlamaServerManagerApp {
         }
     }
 
+    fn apply_theme(ctx: &egui::Context, theme: config::Theme) {
+        let visuals = match theme {
+            config::Theme::Light => egui::Visuals::light(),
+            config::Theme::Dark => egui::Visuals::dark(),
+        };
+        ctx.set_visuals(visuals);
+    }
+
+    fn style_panel(ui: &mut egui::Ui, theme: config::Theme) {
+        match theme {
+            config::Theme::Light => {
+                ui.visuals_mut().override_text_color = Some(egui::Color32::from_black_alpha(255));
+                ui.visuals_mut().panel_fill = egui::Color32::from_rgb(245, 245, 245);
+                ui.visuals_mut().widgets.noninteractive.bg_stroke =
+                    egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(204, 204, 204));
+            }
+            config::Theme::Dark => {
+                ui.visuals_mut().override_text_color = Some(egui::Color32::from_white_alpha(255));
+                ui.visuals_mut().panel_fill = egui::Color32::from_rgb(30, 30, 30);
+                ui.visuals_mut().widgets.noninteractive.bg_stroke =
+                    egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(60, 60, 60));
+            }
+        }
+    }
+
+    fn style_logs_panel(ui: &mut egui::Ui, theme: config::Theme) {
+        match theme {
+            config::Theme::Light => {
+                ui.visuals_mut().override_text_color = Some(egui::Color32::from_black_alpha(255));
+                ui.visuals_mut().panel_fill = egui::Color32::from_rgb(30, 30, 30);
+            }
+            config::Theme::Dark => {
+                ui.visuals_mut().override_text_color = Some(egui::Color32::from_white_alpha(255));
+                ui.visuals_mut().panel_fill = egui::Color32::from_rgb(20, 20, 20);
+            }
+        }
+    }
+
+    fn card_bg_color(theme: config::Theme) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => egui::Color32::from_rgb(50, 50, 50),
+            config::Theme::Dark => egui::Color32::from_rgb(60, 60, 60),
+        }
+    }
+
+    fn card_border_color(theme: config::Theme) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => egui::Color32::from_rgb(204, 204, 204),
+            config::Theme::Dark => egui::Color32::from_rgb(80, 80, 80),
+        }
+    }
+
+    fn card_title_color(theme: config::Theme, is_active: bool) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => {
+                if is_active {
+                    egui::Color32::WHITE
+                } else {
+                    egui::Color32::from_rgb(255, 255, 255)
+                }
+            }
+            config::Theme::Dark => {
+                if is_active {
+                    egui::Color32::WHITE
+                } else {
+                    egui::Color32::from_rgb(230, 230, 230)
+                }
+            }
+        }
+    }
+
+    fn card_desc_color(theme: config::Theme, is_active: bool) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => {
+                if is_active {
+                    egui::Color32::from_rgb(220, 220, 220)
+                } else {
+                    egui::Color32::from_rgb(200, 200, 200)
+                }
+            }
+            config::Theme::Dark => {
+                if is_active {
+                    egui::Color32::from_rgb(200, 200, 200)
+                } else {
+                    egui::Color32::from_rgb(180, 180, 180)
+                }
+            }
+        }
+    }
+
+    fn text_color(theme: config::Theme) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => egui::Color32::from_black_alpha(255),
+            config::Theme::Dark => egui::Color32::from_white_alpha(255),
+        }
+    }
+
+    fn logs_accent_color(theme: config::Theme) -> egui::Color32 {
+        match theme {
+            config::Theme::Light => egui::Color32::YELLOW,
+            config::Theme::Dark => egui::Color32::from_rgb(255, 220, 0),
+        }
+    }
+
     fn draw_settings(&mut self, ctx: &egui::Context) {
         if !self.open_settings {
             return;
@@ -445,6 +555,32 @@ impl LlamaServerManagerApp {
                     egui::ScrollArea::vertical()
                         .vscroll(true)
                         .show(ui, |ui| {
+                            // Theme selector at the top of settings
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new("Theme").strong());
+                                ui.separator();
+                                egui::ComboBox::from_id_salt("theme_selector")
+                                    .selected_text(match self.settings.theme {
+                                        config::Theme::Light => "☀ Light",
+                                        config::Theme::Dark => "☾ Dark",
+                                    })
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(
+                                            &mut self.settings.theme,
+                                            config::Theme::Light,
+                                            "☀ Light",
+                                        );
+                                        ui.selectable_value(
+                                            &mut self.settings.theme,
+                                            config::Theme::Dark,
+                                            "☾ Dark",
+                                        );
+                                    });
+                            });
+                            ui.add_space(15.0);
+                            ui.separator();
+                            ui.add_space(10.0);
+
                             ui_settings_body(ui, &mut self.settings, &mut self.config);
                         });
                 });
@@ -681,6 +817,7 @@ fn ui_settings_body(
     if ui.button("Save").clicked() {
         config.llama_server_path = s.llama_server_path.clone();
         config.models = s.models.clone();
+        config.theme = s.theme;
         if let Err(e) = config.save() {
             eprintln!("Error saving config: {}", e);
         }
